@@ -15,7 +15,7 @@ void func(int sockfd)
     char buff[MAX]; 
     int n; 
     
-    for (;;) { 
+
         bzero(buff, MAX); 
   
         // read the message from client and copy it in buffer 
@@ -25,8 +25,7 @@ void func(int sockfd)
         bzero(buff, MAX); 
         n = 0; 
         // copy server message in the buffer 
-        while ((buff[n++] = getchar()) != '\n') 
-            ; 
+        while ((buff[n++] = getchar()) != '\n'); 
   
         // and send that buffer to client 
         write(sockfd, buff, sizeof(buff)); 
@@ -36,58 +35,44 @@ void func(int sockfd)
             printf("Server Exit...\n"); 
             break; 
         } 
-    } 
+
 } 
 
 int main() 
 { 
-    int sockfd, connfd, len; 
-    struct sockaddr_in servaddr, cli; 
+    int cont,listenfd,connfd,addrlen,addrlen2,fd,pid,addrlen3;
+    
+    struct sockaddr_in address,cli_address;
+    if ((listenfd = socket(AF_INET,SOCK_STREAM,0)) > 0) 
+    printf("The socket was created\n");
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(15001);
+   
+    if (bind(listenfd,(struct sockaddr *)&address,sizeof(address)) == 0)
+		printf("Binding Socket\n");
+	 
   
-    // socket create and verification 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-    if (sockfd == -1) { 
-        printf("socket creation failed...\n"); 
-        exit(0); 
-    } 
-    else
-        printf("Socket successfully created..\n"); 
-    bzero(&servaddr, sizeof(servaddr)); 
+    listen(listenfd,3);
+    printf("server is listening\n");
   
-    // assign IP, PORT 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-    servaddr.sin_port = htons(PORT); 
-  
-    // Binding newly created socket to given IP and verification 
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) { 
-        printf("socket bind failed...\n"); 
-        exit(0); 
-    } 
-    else
-        printf("Socket successfully binded..\n"); 
-  
-    // Now server is ready to listen and verification 
-    if ((listen(sockfd, 5)) != 0) { 
-        printf("Listen failed...\n"); 
-        exit(0); 
-    } 
-    else
-        printf("Server listening..\n"); 
-    len = sizeof(cli); 
-  
-    // Accept the data packet from client and verification 
-    connfd = accept(sockfd, (SA*)&cli, &len); 
-    if (connfd < 0) { 
-        printf("server acccept failed...\n"); 
-        exit(0); 
-    } 
-    else
-        printf("server acccept the client...\n"); 
-  
-    // Function for chatting between client and server 
-    func(connfd); 
-  
-    // After chatting close the socket 
-    close(sockfd); 
+    printf("The server's local address %s ...and port %d\n",inet_ntoa(address.sin_addr),htons(address.sin_port));
+	for(;;)
+	{
+		addrlen = sizeof(struct sockaddr_in);
+		connfd = accept(listenfd,(struct sockaddr *)&cli_address,&addrlen);
+		
+		addrlen2 = sizeof(struct sockaddr_in);
+		
+		printf("The Client  %s is Connected...on port %d\n",inet_ntoa(cli_address.sin_addr),htons(cli_address.sin_port));	
+		if((pid=fork())==0)
+		{
+		  printf("inside child\n");
+		  close(listenfd);
+		  func(connfd);
+		  exit(0);
+		} 
+		close(connfd);
+	}
+    return 0 ;
 } 
